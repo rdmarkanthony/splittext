@@ -5,8 +5,30 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>SplitText Example</title>
         <style>
-            .line__parent {
-                display: inline-block;
+            .container-fluid {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+
+            .container {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            @media (min-width: 1024px) {
+                .container-fluid {
+                    padding-left: 40px;
+                    padding-right: 40px;
+                }
+
+                .container {
+                    max-width: 1024px;
+                }
+            }
+
+            .line-parent {
+                position: relative;
+                overflow: hidden;
             }
             .clone {
                 opacity: 0.5;
@@ -17,123 +39,66 @@
         </style>
     </head>
     <body>
-        <h1 class="com_splittext">
-            Lorem ipsum, dolor sit amet 🙂 consectetur adipisicing elit. Excepturi quisquam
-            recusandae aperiam, quam explicabo a nihil iusto praesentium unde totam libero tenetur
-            numquam, quas natus nobis delectus expedita adipisci aut!
-        </h1>
-        <h2 class="com_splittext">
-            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Blanditiis reprehenderit atque
-            laborum doloremque tenetur assumenda recusandae ut dolore incidunt cumque quam minus
-            earum maxime, architecto optio nisi culpa dicta cum! 😁
-        </h2>
+        <div class="container-fluid">
+            <div class="container">
+                <h1 class="com_splittext">
+                    Lorem ipsum, dolor sit amet 🙂
+                    <b>consectetur adipisicing</b>
+                    elit. Excepturi quisquam recusandae aperiam, quam explicabo a nihil iusto
+                    praesentium unde totam libero
+                    <span>tenetur numquam</span>
+                    , quas natus nobis delectus expedita adipisci aut!
+                </h1>
+                <h2 class="com_splittext">
+                    Lorem ipsum dolor sit, amet consectetur adipisicing elit. Blanditiis
+                    reprehenderit atque laborum doloremque tenetur assumenda recusandae ut dolore
+                    incidunt cumque quam minus earum maxime, architecto optio nisi culpa dicta
+                    <span class="no-wrap">cum! 😁</span>
+                </h2>
+            </div>
+        </div>
 
         <script src="/assets/js/splittype.min.js"></script>
         <script>
-            const textSplitter = function (opt) {
+            const _textSplitter = function (opt) {
                 const _splitter = this;
 
                 _splitter.target = "";
-                _splitter.el = {
-                    parent: "",
-                };
                 _splitter.split = null;
-                _splitter.duplicate = false;
+                _splitter.params = {
+                    types: "lines, words",
+                    lineClass: "line-parent",
+                    wordClass: "word",
+                };
 
                 _splitter.init = function () {
                     _splitter.target = opt.target;
-                    _splitter.el.parent = _splitter.target.parentNode;
 
-                    _splitter.setSplit();
-
-                    window.addEventListener("resize", _splitter.onResize);
+                    window.addEventListener("resize", _splitter.update);
+                    _splitter.update();
                 };
 
-                _splitter.setSplit = function () {
-                    _splitter.split = new SplitType(_splitter.target, { types: "words, lines" });
-
-                    if (_splitter.split.lines.length) {
-                        _splitter.wrapLines();
+                _splitter.update = function () {
+                    if (!_splitter.split) {
+                        // init the splitText
+                        _splitter.split = new SplitType(_splitter.target, _splitter.params);
+                    } else {
+                        _splitter.split.revert();
+                        _splitter.split.split(_splitter.params);
                     }
 
-                    if (_splitter.split.words.length) {
-                        _splitter.countWords();
-                        _splitter.detectEmojis();
-                    }
+                    // for lines of texts
+                    _splitter.split.lines.forEach((line, index) => {
+                        line.setAttribute("style", `--index:${index}`);
+                    });
 
-                    if (_splitter.duplicate) {
-                        _splitter.duplicateNodes();
-                    }
-                };
+                    // for words per lines
+                    _splitter.split.words.forEach((word, index) => {
+                        word.setAttribute("style", `display:inline-block;--index:${index}`);
 
-                _splitter.wrapLines = function () {
-                    const lines = _splitter.split.lines;
-
-                    for (let i = 0; i < lines.length; i++) {
-                        lines[i].setAttribute("style", `--index:${i}`);
-                        _splitter.wrap(lines[i], "");
-                        _splitter.addClass(lines[i].parentNode, "line__parent");
-                    }
-                };
-
-                _splitter.countWords = function () {
-                    const words = _splitter.split.words;
-
-                    for (let i = 0; i < words.length; i++) {
-                        let style = words[i].getAttribute("style") + `;--index:${i}`;
-                        words[i].setAttribute("style", style);
-                        _splitter.addClass(words[i], "word");
-                    }
-                };
-
-                _splitter.detectEmojis = function () {
-                    for (let i = 0; i < _splitter.split.words.length; i++) {
-                        if (/\p{Extended_Pictographic}/u.test(_splitter.split.words[i].innerHTML)) {
-                            _splitter.addClass(_splitter.split.words[i], "emoji");
-                        }
-                    }
-                };
-
-                _splitter.duplicateNodes = function () {
-                    const lines = _splitter.split.lines;
-                    let $clone = document.createElement("div");
-                    _splitter.addClass($clone, "clone");
-                    $clone.setAttribute("aria-hidden", true);
-
-                    for (let i = 0; i < lines.length; i++) {
-                        let cloneLine = lines[i].parentNode.cloneNode(true);
-                        $clone.appendChild(cloneLine);
-                    }
-
-                    _splitter.target.appendChild($clone);
-                };
-
-                _splitter.onResize = function () {
-                    _splitter.split.revert();
-                    _splitter.split.split(_splitter.params);
-
-                    if (_splitter.split.lines.length) {
-                        _splitter.wrapLines();
-                    }
-
-                    if (_splitter.split.words.length) {
-                        _splitter.countWords();
-                        _splitter.detectEmojis();
-                    }
-
-                    if (_splitter.duplicate) {
-                        _splitter.duplicateNodes();
-                    }
-                };
-
-                _splitter.wrap = function (el, wrapper) {
-                    wrapper = wrapper || document.createElement("div");
-                    el.parentNode.insertBefore(wrapper, el);
-                    wrapper.appendChild(el);
-                };
-
-                _splitter.addClass = function (el, className) {
-                    el.classList.add(className);
+                        if (/\p{Extended_Pictographic}/u.test(word.innerHTML))
+                            word.classList.add("emoji");
+                    });
                 };
 
                 if (opt.target) _splitter.init();
@@ -141,7 +106,7 @@
 
             document.addEventListener("DOMContentLoaded", () => {
                 const _splitText = document.querySelectorAll(".com_splittext");
-                _splitText.forEach((item) => new textSplitter({ target: item }));
+                _splitText.forEach((item) => new _textSplitter({ target: item }));
             });
         </script>
     </body>
