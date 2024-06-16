@@ -5,6 +5,7 @@ package-lock.json
 *.map
 .DS_Store
 
+.firebase
 .firebase/
 .firebaserc
 firebase.json
