@@ -1,0 +1,9 @@
+node_modules/
+package.json
+package-lock.json
+*.lock
+*.map
+.DS_Store
+
+.firebaserc
+firebase.json
